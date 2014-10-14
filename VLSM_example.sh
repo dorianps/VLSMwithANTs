@@ -2,19 +2,15 @@
 # Requirements: Both ANTs and ANTsR (see https://github.com/stnava/ for how to install these)
 # Test is done on Linux with the latest version of available on Oct 13 2014
 #
-# What is VLSM? It's a method trying to put in relation the presence or absence of lesion in a voxel with some behavioral measures.
-# In practice, a lesion mask is created on each patient's brain damage (stroke, sclerosis, etc.). These masks are brought to a common template space. Thus, for each voxel we have a value of 0 or 1 for each subject, depending whether the subject was damaged or not. This creates a hypothetic population of two groups, one that is lesioned in that voxel, the other that is not. The simplest way to compare the two groups is to compare them about a behavioral measure using a t-test. We can also use linear regression, the result will be identical, but we can include more than one behavioral measure at once. We expect that, if the voxel is critical for the behavioral measure, the two groups will be different in the behavioral measure. Note that we are still talking about a single voxel. This rationale is repeated in each voxel.
-# What is this example doing?
-# There are five steps involved. However, if you want to save time and see how to do VLSM on a set of masks, go directly to STEP 5.
-# STEP 1: take 20 brains from a publicly available dataset.
-# STEP 2: draw some fictitious lesions or download them from github.
-# STEP 3: calculate normalization of T1 images into template space.
-# STEP 3: normalize T1 images into template
-# STEP 4: apply transformation to lesion masks
-# STEP 5: do a VLSM.
-
-# your ANTs bin folder (antsRegistration and antsCorticalThickness.sh should be there)
-MYANTSPATH =/path/to/your/ANTs/bin/
+# There are five steps involved in this example. However, if you want to save time and see how to do VLSM on a set of masks, go directly to STEP 5.
+# STEP 1: take 20 brains from a publicly available dataset. (optional)
+# STEP 2: draw some fictitious lesions or download them from github. (optional)
+# STEP 3: calculate normalization of T1 images into template space. (optional)
+# STEP 4: apply transformation to lesion masks. (optional)
+# STEP 5: do a VLSM (mandatory)
+# 
+# What is VLSM? It's a method to put in relation the presence or absence of lesion in a voxel with one or more behavioral or demographic measures.
+# In practice, each patient has a lesion mask in the area of brain damage (stroke, sclerosis, etc.). The subject's brain is normalized to a common template and the lesions are brought in normalized space. Thus, for each voxel we have some subject with value 0 and some with value 1, depending whether the subject was damaged or not. This creates a hypothetic population of two groups, one that is lesioned in that voxel, the other that is not. If the voxel is critical for the behavioral measure, the two groups will be different in the behavioral measure. Note that we are still talking about a single voxel. Some is true for the remaining voxels, each tested separately (univariate approach).
 
 # define your data folder
 mydata=/data/jag/username
@@ -153,4 +149,4 @@ betas[mask==1] <- -(vlsm_interpretation$beta.t[ dx_var ,]) # we also invert nega
 antsImageWrite(betas,"MyMeasureBetas.nii.gz")
 
 
-# That's all. Open the template image and overlay "MyMeasureBetas.nii.gz" or "AgeBetas.nii.gz" to see the results.
+# That's all. Open the template image (T_template0.nii.gz) and overlay "MyMeasureBetas.nii.gz" or "AgeBetas.nii.gz" to see the results.
