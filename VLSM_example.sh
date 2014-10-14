@@ -112,8 +112,9 @@ ThresholdImage 3 LesionAverage.nii.gz vlsm_mask.nii.gz 0.001 1
 
 ############################### STEP 5: do a VLSM
 # At this point you should have all subject_*.nii.gz files in the VLSM directory. If you don't have them, download them with the following commented lines:
-# 
-#
+# cd $mydata/NKI-TRT-20_volumes
+# wget --no-check-certificate https://github.com/dorianps/VLSMwithANTs/blob/master/VLSM_folder.tar.gz?raw=true
+# tar -zxvf VLSM_folder.tar.gz
 
 R  # get back to R
 mydata=/data/jag/username  # define our base folder in R
