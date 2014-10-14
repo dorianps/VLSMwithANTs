@@ -1,7 +1,7 @@
 VLSMwithANTs
 ============
 This is an example on how you can run VLSM in R using Advanced Normalization Tools (ANTs).
-The instructions are included as commentsw in the file https://github.com/dorianps/VLSMwithANTs/blob/master/VLSM_example.sh
+The instructions are included as comments in the file https://github.com/dorianps/VLSMwithANTs/blob/master/VLSM_example.sh
 <br><br>
 Files:<br>
 VLSM_example.sh - code to run the example<br>
