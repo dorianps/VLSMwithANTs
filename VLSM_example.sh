@@ -1,11 +1,11 @@
 ## This tutorial shows how to run voxel-based-lesion-to-symptom--mapping (VLSM) with Advanced Normalization Tools (ANTs and ANTsR)
 # Requirements: Both ANTs and ANTsR (see https://github.com/stnava/ for how to install these)
-# Test is done on Linux with the latest version of both ANTs and ANTsR on Oct 13 2014
+# Test is done on Linux with the latest version of available on Oct 13 2014
 #
 # What is VLSM? It's a method trying to put in relation the presence or absence of lesion in a voxel with some behavioral measures.
 # In practice, a lesion mask is created on each patient's brain damage (stroke, sclerosis, etc.). These masks are brought to a common template space. Thus, for each voxel we have a value of 0 or 1 for each subject, depending whether the subject was damaged or not. This creates a hypothetic population of two groups, one that is lesioned in that voxel, the other that is not. The simplest way to compare the two groups is to compare them about a behavioral measure using a t-test. We can also use linear regression, the result will be identical, but we can include more than one behavioral measure at once. We expect that, if the voxel is critical for the behavioral measure, the two groups will be different in the behavioral measure. Note that we are still talking about a single voxel. This rationale is repeated in each voxel.
 # What is this example doing?
-# Here we will:
+# There are five steps involved. However, if you want to save time and see how to do VLSM on a set of masks, go directly to STEP 5.
 # STEP 1: take 20 brains from a publicly available dataset.
 # STEP 2: draw some fictitious lesions or download them from github.
 # STEP 3: calculate normalization of T1 images into template space.
@@ -21,24 +21,22 @@ mydata=/data/jag/username
 cd $mydata
 
 
-# STEP 1: get the data mindboggle.info
+############################### STEP 1: get the data
 wget http://mindboggle.info/data/mindboggle101/NKI-TRT-20_volumes.tar.gz
 tar -zxvf NKI-TRT-20_volumes.tar.gz  # after this you have a folder called NKI-TRT-20_volumes with 20 subjects in it
 
 
-# STEP 2: draw virtual lesions only in 10 subjects. For your convenience I will include lesions already as a separate zip file. Each lesion must be in the respective subject folder.
-# If you want to draw yourself, draw around the same place for each subject, i.e. only around the left inferior frontal cortex. Save the lesion mask in the subject folder as "tempseg.nii".
-# Several software can draw lesion (MRIcron, ITKsnap, etc). ITKsnap has a nice feature of growing mask, so you paint in one or two slices and the software makes it a 3D object.
-# Remember, lesions need to be 3D objects, not a drawing on a single slice. 
+############################### STEP 2: draw virtual lesions
+# Open each subject's T1 and draw a lesion around the left inferior frontal cortex. Then save the file as tempseg.nii in the subject's folder.
+# To draw lesions we can use ITKsnap or MRIcron, but remember, the lesion is a 3D object in multiple slices; don't expect to draw a single slice and call that a lesion.
+# Alternatively you can get download some lesion masks I prepared for this example:
+wget --no-check-certificate https://github.com/dorianps/VLSMwithANTs/blob/master/Lesions.tar.gz?raw=true
+tar -zxvf Lesions.tar.gz
 
-
-# STEP 3:  normalize T1 images into template
-# This may be the most difficult and lengthy step. If you have a single computer it may run 6-40 hours per subject.
-# I used antsCorticalThickness and this takes longer. You may use only a registration process through antsRegistration
-# I run it on all 20 subjects, but this is unnecesasry, only 10 will be used for normalization, the remaining 10 will be empty files without any lesion mask (subjects are healthy, right? See below).
+############################### STEP 3:  normalize T1 images into template
+# This may be the most effortful step. On a single may run 6-40 hours per subject, but you can cut times by using antsRegistration instead of antsCorticalThickness.sh
+# Also, the example runs all 20 subjects, but this is unnecesasry, only 10 will be used for normalization. (See below).
 # All we need from this step is transformation files (Affine+Warp).
-
-
 for i in {1..20}
 do
    cd $mydata/NKI-TRT-20_volumes/NKI-TRT-20-$i/
@@ -53,7 +51,7 @@ do
 done
 
 
-######## STEP 4: Apply transformations to lesion masks
+############################### STEP 4: Apply transformations to lesion masks
 # Before you start, create a folder called VLSM inside $mydata/NKI-TRT-20_volumes/
 # We will switch to R for the remaining steps
 # At this point we have calculated transformations from all subjects, will simply apply those.
@@ -67,20 +65,20 @@ library(ANTsR)
 for (i in 1:10 ) {
 	# only subjects 1-10 will be run, those for which we created virtual lesions
 	# for subjects 11-20 we will create empty images later
-	
+
 	# switch working dir to this guy's folder
 	setwd(paste(mydata,'/NKI-TRT-20_volumes/NKI-TRT-20-',i,'/', sep = ""))
-	
+
 	# read images
 	lesion <- antsImageRead("tempseg.nii", 3)
 	brainmask <- antsImageRead("OnOasis025BrainExtractionMask.nii.gz", 3)
-	
+
 	# your lesion was over the skull, lets take only the part inside the brain
 	brainlesion <- antsImageClone(lesion)
 	ImageMath(3, brainlesion, "m", lesion, brainmask)
 	antsImageWrite(brainlesion, "brainlesion.nii.gz")
-	
-	
+
+
 	# these are the transformation files, in the correct order, to bring subject to template
 	mytx <- list()
 	mytx$fwdtransforms[1] <- paste(mydata,"/NKI-TRT-20_volumes/NKI-TRT-20-",i, "/OnOasis025SubjectToTemplate1Warp.nii.gz", sep="")
@@ -112,8 +110,13 @@ AverageImages 3 LesionAverage.nii.gz 0 subject_*.nii.gz
 ThresholdImage 3 LesionAverage.nii.gz vlsm_mask.nii.gz 0.001 1
 
 
-######## STEP 5: do a VLSM
+############################### STEP 5: do a VLSM
+# At this point you should have all subject_*.nii.gz files in the VLSM directory. If you don't have them, download them with the following commented lines:
+# 
+#
+
 R  # get back to R
+mydata=/data/jag/username  # define our base folder in R
 library(ANTsR)  # load ANTsR
 
 setwd(paste(mydata,"/NKI-TRT-20_volumes/VLSM/", sep=""))  # switch to VLSM dir
@@ -137,7 +140,7 @@ names( vlsm_interpretation )
 age_var <- grep("age",rownames(vlsm_interpretation$beta.t))
 dx_var <- grep("dx",rownames(vlsm_interpretation$beta.t))
 agebetas <- vlsm_interpretation$beta.t[ age_var ,]
-dxbetas <- vlsm_interpretation$beta.t[ dx_var,] 
+dxbetas <- vlsm_interpretation$beta.t[ dx_var,]
 hist( agebetas )  # T values histogram distribution for age factor, no large T values in too many voxels
 hist( dxbetas )  # T values histogram for our measure of interest, large negative T values in many voxels
 
